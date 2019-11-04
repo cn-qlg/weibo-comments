@@ -29,7 +29,9 @@ class WeiboUser:
         self.cookies = cookies or self.load_cookies()
 
     def load_cookies(self):
-        return "SINAGLOBAL=7930653504713.758.1517897900165; _ga=GA1.2.351974237.1517973848; __gads=ID=549ad9fb1810064a:T=1517973845:S=ALNI_MYAvwtcBie0htqnDZNrxVeuHuebJw; NTKF_T2D_CLIENTID=guestD999E7A0-9EB4-BA99-2454-137F0864F962; YF-V5-G0=2583080cfb7221db1341f7a137b6762e; _s_tentry=-; Apache=2742846808097.5586.1566973818881; ULV=1566973818895:21:3:1:2742846808097.5586.1566973818881:1565344337057; login_sid_t=4962adc481a1e8c8e04e19af010f18ee; cross_origin_proto=SSL; Ugrow-G0=e1a5a1aae05361d646241e28c550f987; WBtopGlobal_register_version=307744aa77dd5677; SSOLoginState=1567752727; finger_id=7e4f6184eeb90545; visitor_id=dfec20cee2f141b7; TC-V5-G0=799b73639653e51a6d82fb007f218b2f; un=azazjjyjjy@sina.com; wvr=6; SCF=AjSjCWlAHvk8_c-AePYsNoaRbJ38gGkgrROYrZHPlNw0koGdWhDucCtYi-1tLeIlSpENXr5Xcpcfr93KEBEZoc0.; SUB=_2A25wu_ycDeRhGedP71oS-S7IwjyIHXVTsWlUrDV8PUJbmtAKLVnBkW9NX8N8qU_B_7usDrhgl3l_OVRzRlhpauZ6; SUBP=0033WrSXqPxfM725Ws9jqgMF55529P9D9W5R65kJyRkRxPAbdIuvBhHG5JpX5K-hUgL.Fo2pShn01K5X1K52dJLoI0YLxKML1KBLBo-LxKqLBoeLBKzLxKMLBoeLB.zLxKqLBK-LBK5LxKMLBK-L1hnLxKMLBK-LBoMLxKBLBonLB-Bt; SUHB=0sqwDpV56Kq_ww; ALF=1604370496; wb_view_log_1148390490=1366*7681; UOR=,,login.sina.com.cn; webim_unReadCount=%7B%22time%22%3A1572834535528%2C%22dm_pub_total%22%3A0%2C%22chat_group_client%22%3A0%2C%22allcountNum%22%3A18%2C%22msgbox%22%3A0%7D; TC-Page-G0=b993e9b6e353749ed3459e1837a0ae89|1572834532|1572834508"
+        with open("cookies.text","r") as f:
+            cookies = f.read()
+        return cookies
 
     def view_blogs_comments_from_user(self, target_user):
         weibo_spider = WeiboSpider(target=target_user, cookies=self.cookies)
@@ -71,15 +73,6 @@ class WeiboSpider:
                         break
                 if not has_more:
                     break
-        # print(jsonobj["html"])
-        # with open("D:/PE666/桌面/Work/PythonStudy/XCrawler/WeiboComments/result2.html", "w+", encoding="utf8") as f:
-        #     f.write(jsonobj["html"])
-        # soup = BeautifulSoup(jsonobj["html"], features="html.parser")
-        # lazy_load_item = soup.find("div", attrs={"node-type": "lazyload"})
-        # if lazy_load_item is not None:
-        #     print(self.lazy_load_blogs(1, 0))
-        #     print(self.lazy_load_blogs(1, 1))
-        #     print(self.lazy_load_blogs(2, 0))
 
     def get_blogs_from_resp(self, resp):
         soup = BeautifulSoup(resp, features="html.parser")
@@ -102,8 +95,6 @@ class WeiboSpider:
         next_page_button = soup.find(
             "a", attrs={"bpfilter": "page", "action-type": "feed_list_page_more"})
         if next_page_button is not None:
-            # currentPage=2&countPage=89
-            print(next_page_button)
             action_data = next_page_button["action-data"]
             print("MaxPage:{0}".format(
                 action_data[action_data.index("countPage")+10:]))
@@ -157,7 +148,5 @@ class WeiboSpider:
 
 
 if __name__ == "__main__":
-    # get_all_mblogs("baikehome")
-    # get_all_blogs("yangmiblog")
-    user = WeiboUser("Canana")
+    user = WeiboUser("test")
     user.view_blogs_comments_from_user("yangmiblog")
