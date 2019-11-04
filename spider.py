@@ -62,8 +62,8 @@ class WeiboCommentsSpider:
 
         self.get_blogs_from_resp(jsonobj["html"])
         # print(jsonobj["html"])
-        with open("D:/PE666/桌面/Work/PythonStudy/XCrawler/WeiboComments/result2.html", "w+", encoding="utf8") as f:
-            f.write(jsonobj["html"])
+        # with open("D:/PE666/桌面/Work/PythonStudy/XCrawler/WeiboComments/result2.html", "w+", encoding="utf8") as f:
+        #     f.write(jsonobj["html"])
         soup = BeautifulSoup(jsonobj["html"], features="html.parser")
         lazy_load_item = soup.find("div", attrs={"node-type": "lazyload"})
         print(lazy_load_item)
@@ -91,24 +91,24 @@ class WeiboCommentsSpider:
 
         url = "https://weibo.com/p/aj/v6/mblog/mbloglist?"
         params = {
+            "__rnd": str(int(time.time() * 1000)),
             "ajwvr": "6",
             "domain": self.config["domain"],
-            "is_search": "0",
-            "visible": "0",
+            "domain_op": self.config["domain"],
+            "feed_type": "0",
+            "id": self.config["page_id"],
             "is_all": "1",
+            "is_search": "0",
             "is_tag": "0",
-            "profile_ftype": "1",
             "page": page,
             "pagebar": pagebar,
             "pl_name": "Pl_Official_MyProfileFeed__21",
-            "id": self.config["page_id"],
-            "script_uri": "/yangmiblog",
-            "feed_type": "0",
-            "pre_page": "2",
-            "domain_op": self.config["domain"],
-            "__rnd": str(int(time.time() * 1000))
+            "pre_page": "1",
+            "profile_ftype": "1",  
+            "script_uri": "/{0}".format(self.target),  
+            "visible": "0",
         }
-        resp = get_response(url, encoding="utf8",
+        resp = get_response(url, encoding="utf8", params=params,
                             cookies=self.cookies, as_json=True)
         data = resp["data"]
         self.get_blogs_from_resp(data)
