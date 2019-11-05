@@ -29,7 +29,7 @@ class WeiboUser:
         self.cookies = cookies or self.load_cookies()
 
     def load_cookies(self):
-        with open("cookies.text","r") as f:
+        with open("cookies.text", "r") as f:
             cookies = f.read()
         return cookies
 
@@ -71,8 +71,9 @@ class WeiboSpider:
                     has_more = self.lazy_load_blogs(page, pagebar)
                     if not has_more:
                         break
-                if not has_more:
+                if not has_more or not self.get_blogs_from_pages(page + 1):
                     break
+                
 
     def get_blogs_from_resp(self, resp):
         soup = BeautifulSoup(resp, features="html.parser")
@@ -103,6 +104,28 @@ class WeiboSpider:
         if next_page_button is not None or lazy_load_item is not None:
             return True
         return False
+
+    def get_blogs_from_pages(self, page):
+        url = "https://weibo.com/yangmiblog?"
+        params = {
+            "pids": "Pl_Official_MyProfileFeed__21",
+            "is_search": "0",
+            "visible": "0",
+            "is_all": "1",
+            "is_tag": "0",
+            "profile_ftype": "1",
+            "page": page,
+            "ajaxpagelet": "1",
+            "ajaxpagelet_v6": "1",
+            "__ref": "%2F{0}%3Fis_search%3D0%26visible%3D0%26is_all%3D1%26is_tag%3D0%26profile_ftype%3D1%26page%3D{1}".format(self.target, max(page-1,1)),
+            "_t": "FM_{0}".format(str(int(time.time() * 100000))),
+        }
+        resp = get_response(url, encoding="utf8", params=params, cookies=self.cookies)
+        scripts = re.findall(
+            "<script>parent.FM.view\((.*)\)</script>", resp)
+        jsonobj = json.loads(scripts[0])
+        data = jsonobj["html"]
+        return self.get_blogs_from_resp(data)
 
     def lazy_load_blogs(self, page, pagebar):
         print("page={0}, pagebar={1}".format(page, pagebar))
