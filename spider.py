@@ -33,20 +33,37 @@ class WeiboUser:
             cookies = f.read()
         return cookies
 
-    def view_blogs_comments_from_user(self, target_user):
+    def view_blogs_comments_from_user(self, target_user, max_page=9999):
         weibo_spider = WeiboSpider(target=target_user, cookies=self.cookies)
-        weibo_spider.view_main_page()
+        weibo_spider.get_all_blogs(max_page)
 
 
 class WeiboSpider:
+    """Weibo Spider, 用于抓取微博用户的所有blog，以及其下的所有评论。
+    """
+
     def __init__(self, target, cookies):
         self.target = target
         self.cookies = cookies
         self.parameters = ["oid", "page_id",
                            "uid", "domain", "location", "pid"]
         self.config = dict()
+    
+    def get_all_blogs(self, max_page=9999):
+        if not self.__view_main_page():
+            return None
+        has_more = False
+        for page in range(1, max_page):
+            if page != 1:  # 第一页不需要额外访问，包含在主页内了。其余每访问一页，需要调用lazy_load加载两次。
+                self.view_pages(page)
+            for pagebar in range(2):
+                has_more = self.lazy_load_blogs(page, pagebar)
+                if not has_more:
+                    break
+            if not has_more:
+                break
 
-    def get_config(self, resp):
+    def __get_config(self, resp):
         result = re.findall("\$CONFIG\['(\w+)'\]='(.*?)';", resp)
         print(result)
         for conf in result:
@@ -54,28 +71,20 @@ class WeiboSpider:
                 print(conf)
                 self.config[conf[0]] = conf[1]
         print(self.config)
-
-    def view_main_page(self):
+        
+    def __view_main_page(self):
+        print("[Main Page]")
         url = "https://weibo.com/{0}?profile_ftype=1&is_all=1".format(
             self.target)
         resp = get_response(url, encoding="utf8", cookies=self.cookies)
-        self.get_config(resp)
+        self.__get_config(resp)
         scripts = re.findall(
             "<script>FM\.view\((.*?pl\.content\.homeFeed\.index.*?)\)</script>", resp)
         jsonobj = json.loads(scripts[1])
+        return self.__get_blogs_from_resp(jsonobj["html"])
+            
 
-        if self.get_blogs_from_resp(jsonobj["html"]):
-            has_more = False
-            for page in range(1, 4):
-                for pagebar in range(2):
-                    has_more = self.lazy_load_blogs(page, pagebar)
-                    if not has_more:
-                        break
-                if not has_more or not self.get_blogs_from_pages(page + 1):
-                    break
-                
-
-    def get_blogs_from_resp(self, resp):
+    def __get_blogs_from_resp(self, resp):
         soup = BeautifulSoup(resp, features="html.parser")
         mblogs = soup.findAll("div", attrs={"action-type": "feed_list_item"})
         if mblogs is None or len(mblogs) <= 0:
@@ -105,8 +114,9 @@ class WeiboSpider:
             return True
         return False
 
-    def get_blogs_from_pages(self, page):
-        url = "https://weibo.com/yangmiblog?"
+    def view_pages(self, page):
+        print("[Page:{0}]".format(page))
+        url = "https://weibo.com/{0}?".format(self.target)
         params = {
             "pids": "Pl_Official_MyProfileFeed__21",
             "is_search": "0",
@@ -117,15 +127,16 @@ class WeiboSpider:
             "page": page,
             "ajaxpagelet": "1",
             "ajaxpagelet_v6": "1",
-            "__ref": "%2F{0}%3Fis_search%3D0%26visible%3D0%26is_all%3D1%26is_tag%3D0%26profile_ftype%3D1%26page%3D{1}".format(self.target, max(page-1,1)),
+            "__ref": "/{0}?is_search=0&visible=0&is_all=1&is_tag=0&profile_ftype=1&page={1}".format(self.target, max(page-1, 1)),
             "_t": "FM_{0}".format(str(int(time.time() * 100000))),
         }
-        resp = get_response(url, encoding="utf8", params=params, cookies=self.cookies)
+        resp = get_response(url, encoding="utf8",
+                            params=params, cookies=self.cookies)
         scripts = re.findall(
             "<script>parent.FM.view\((.*)\)</script>", resp)
         jsonobj = json.loads(scripts[0])
         data = jsonobj["html"]
-        return self.get_blogs_from_resp(data)
+        return self.__get_blogs_from_resp(data)
 
     def lazy_load_blogs(self, page, pagebar):
         print("page={0}, pagebar={1}".format(page, pagebar))
@@ -151,7 +162,7 @@ class WeiboSpider:
         resp = get_response(url, encoding="utf8", params=params,
                             cookies=self.cookies, as_json=True)
         data = resp["data"]
-        return self.get_blogs_from_resp(data)
+        return self.__get_blogs_from_resp(data)
 
     def get_all_comments(self, commentsid):
         url = "https://weibo.com/aj/v6/comment/big?"
@@ -172,4 +183,4 @@ class WeiboSpider:
 
 if __name__ == "__main__":
     user = WeiboUser("test")
-    user.view_blogs_comments_from_user("yangmiblog")
+    user.view_blogs_comments_from_user("yangmiblog", max_page=5)
