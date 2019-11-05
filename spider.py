@@ -69,8 +69,11 @@ class WeiboSpider:
         for conf in result:
             if conf[0] in self.parameters:
                 print(conf)
-                self.config[conf[0]] = conf[1]
+                self.config[conf[0]] = conf[1]        
+        domid = re.findall('"domid":"(Pl_Official_MyProfileFeed__\d+)"', resp)
+        self.config["Pl_Official_MyProfileFeed"] = domid[0]
         print(self.config)
+
         
     def __view_main_page(self):
         print("[Main Page]")
@@ -118,7 +121,7 @@ class WeiboSpider:
         print("[Page:{0}]".format(page))
         url = "https://weibo.com/{0}?".format(self.target)
         params = {
-            "pids": "Pl_Official_MyProfileFeed__21",
+            "pids": self.config["Pl_Official_MyProfileFeed"],
             "is_search": "0",
             "visible": "0",
             "is_all": "1",
@@ -153,7 +156,7 @@ class WeiboSpider:
             "is_tag": "0",
             "page": page,
             "pagebar": pagebar,
-            "pl_name": "Pl_Official_MyProfileFeed__21",
+            "pl_name": self.config["Pl_Official_MyProfileFeed"],
             "pre_page": page,
             "profile_ftype": "1",
             "script_uri": "/{0}".format(self.target),
@@ -183,4 +186,5 @@ class WeiboSpider:
 
 if __name__ == "__main__":
     user = WeiboUser("test")
-    user.view_blogs_comments_from_user("yangmiblog", max_page=5)
+    # user.view_blogs_comments_from_user("u/6316137991", max_page=3)
+    user.view_blogs_comments_from_user("tlg2yqz", max_page=3)
