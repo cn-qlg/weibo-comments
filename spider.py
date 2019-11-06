@@ -191,6 +191,15 @@ class WeiboSpider:
         #     "sum_comment_number": "70",
         #     "filter_tips_before": "0",
         # }
+        child_comment_parms = {
+            "ajwvr": "6",
+            "more_comment": "big",
+            "root_comment_id": "4435584212495950",
+            "is_child_comment": "ture",
+            "id": blogid,
+            "from": "singleWeiBo",
+            "__rnd": str(int(time.time() * 1000))
+        }
         # params.update(other_params)
         jsonobj = get_response(url, cookies=self.cookies,
                                params=params, as_json=True)
