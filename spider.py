@@ -27,29 +27,32 @@ class WeiboUser:
     def __init__(self, user_name, cookies=None):
         self.user_name = user_name
         self.cookies = cookies or self.load_cookies()
+        self.weibo_spider = WeiboSpider(cookies=self.cookies)
 
     def load_cookies(self):
         with open("cookies.text", "r") as f:
             cookies = f.read()
         return cookies
 
-    def view_blogs_comments_from_user(self, target_user, max_page=9999):
-        weibo_spider = WeiboSpider(target=target_user, cookies=self.cookies)
-        weibo_spider.get_all_blogs(max_page)
+    def view_blogs_comments_from_user(self, target_user, max_page=9999):        
+        self.weibo_spider.get_all_blogs(target_user, max_page)
+
+    def view_blog_comments(self, blogid):
+        self.weibo_spider.get_all_comments(blogid)
 
 
 class WeiboSpider:
     """Weibo Spider, 用于抓取微博用户的所有blog，以及其下的所有评论。
     """
 
-    def __init__(self, target, cookies):
-        self.target = target
+    def __init__(self, cookies):        
         self.cookies = cookies
         self.parameters = ["oid", "page_id",
                            "uid", "domain", "location", "pid"]
         self.config = dict()
     
-    def get_all_blogs(self, max_page=9999):
+    def get_all_blogs(self, target, max_page=9999):
+        self.target = target
         if not self.__view_main_page():
             return None
         has_more = False
@@ -168,24 +171,41 @@ class WeiboSpider:
         data = resp["data"]
         return self.__get_blogs_from_resp(data)
 
-    def get_all_comments(self, commentsid):
+    def __get_comments_from_resp(self, resp):
+        pass    
+
+    def get_all_comments(self, blogid):
         url = "https://weibo.com/aj/v6/comment/big?"
         params = {
             "ajwvr": "6",
-            "id": commentsid,
+            "id": blogid,
             "from": "singleWeiBo",
             "__rnd": str(int(time.time() * 1000))
         }
-
-        jsonobj = get_response(url, cookies=self.cookie,
+        # other_params = {
+        #     "root_comment_max_id": "227075128261785",
+        #     "root_comment_max_id_type": "0",
+        #     "root_comment_ext_param": "",
+        #     "page": "2",
+        #     "filter": "hot",
+        #     "sum_comment_number": "70",
+        #     "filter_tips_before": "0",
+        # }
+        # params.update(other_params)
+        jsonobj = get_response(url, cookies=self.cookies,
                                params=params, as_json=True)
         soup = BeautifulSoup(jsonobj["data"]["html"], features="html.parser")
         comments = soup.findAll("div", attrs={"node-type": "root_comment"})
         for cmt in comments:
-            print(cmt.find("div", attrs={"class": "WB_text"}).text)
+            print(cmt["comment_id"], cmt.find(
+                "div", attrs={"class": "WB_text"}).text.strip())
+        comment_loading = soup.find(
+            "div", attrs={"node-type": "comment_loading"})
+        print(comment_loading["action-data"])
 
 
 if __name__ == "__main__":
     user = WeiboUser("test")
     # user.view_blogs_comments_from_user("u/6316137991", max_page=3)
-    user.view_blogs_comments_from_user("tlg2yqz", max_page=3)
+    # user.view_blogs_comments_from_user("yangmiblog", max_page=1)
+    user.view_blog_comments("4434821667124708")
