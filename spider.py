@@ -95,8 +95,9 @@ class WeiboSpider:
         for blog in mblogs:
             feed_date_item = blog.find(
                 "a", attrs={"node-type": "feed_list_item_date"})
+            content = blog.find("div", attrs={"node-type":"feed_list_content"})
             print(feed_date_item["name"],
-                  feed_date_item["href"], feed_date_item.text.strip(), end=" ")
+                  feed_date_item["href"], content.text.strip(), feed_date_item.text.strip(), end=" ")
             feed_expand = blog.find("div", attrs={"class": "WB_feed_expand"})
             if feed_expand is not None:
                 forward_from = feed_expand.find(
